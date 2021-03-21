@@ -1,44 +1,48 @@
 defmodule ToDo.Actions do
-  #alias ToDo.Item
 
+  # Generates a new empty todo list
   def new_list() do
     %{
-      tasks: [%{
-        id: 0,
-        name: "",
-        date_added: "",
-        completed: false,
-      }]
+      status: :new,
+      tasks: %{
+
+      }
     }
   end
 
-  def show_list(%{} = list) do
+  # Show the current todo list
+  def show_list(list) do
     IO.inspect list
   end
 
-  def add_item(%{tasks: [%{id: id}]} = _list, task) when id == 0 do
-    %{
-      tasks: [%{
-        id: + 1,
-        name: task,
-        date_added: get_time(:calendar.local_time()),
-        completed: false
-      }]
-    }
+  # Add an item to the todo list
+  def add_item(list, task) when is_binary(task) do
+    put_in(list, [Access.key(:tasks, %{}), Access.key(1 + map_size(list[:tasks]))], %{name: task, completed: false, date_added: get_time(:calendar.local_time())})
+    |> Map.put(:status, :wip)
   end
 
-  def add_item(%{tasks: _task } = list, task) when is_binary(task)  do
-    %{list | tasks: list[:tasks] ++ [%{id: length(list.tasks) + 1, name: task, date_added: get_time(:calendar.local_time()), completed: false}]}
-   end
+  def add_item(_list, _task), do: ~s(Your task must be wrapped in "quotes")
 
-   def add_item(_list, _task), do: ~s(Your task must be wrapped in "quotes")
-
- def delete_item() do
-
- end
+ # Mark an item as completed
+ def complete_item(list, item_id)  do
+  get_and_update_in(list[:tasks][item_id][:completed], &{&1, true})
+  |> elem(1)
+  |> maybe_completed()
+  end
 
   defp get_time({{year, month, day}, {_, _, _}} = _time) do
     "#{month}.#{day}.#{year}"
   end
+
+  defp maybe_completed(list) do
+    items_completed = for {_, %{completed: true}} = item <- list[:tasks], do: item
+    cond do
+      length(items_completed) == map_size(list[:tasks]) -> update_status(list, :completed)
+      true -> update_status(list, :wip)
+    end
+
+  end
+
+  defp update_status(list, status), do: Map.put(list, :status, status)
 
 end
