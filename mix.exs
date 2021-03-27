@@ -14,6 +14,7 @@ defmodule Todo.MixProject do
   # Run "mix help compile.app" to learn about applications.
   def application do
     [
+      mod: { ToDo.Application, [] },
       extra_applications: [:logger]
     ]
   end
